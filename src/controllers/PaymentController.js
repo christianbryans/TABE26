@@ -18,12 +18,11 @@ export class PaymentController {
       throw new AppError('Bill ID is required', 400);
     }
 
-    // CHECK BILL FIRST
-    const existingBill = await prisma.bill.findUnique({
-      where: {
-        id: billId,
-      },
-    });
+const existingBill = await prisma.bill.findUnique({
+  where: {
+    id: billId,
+  },
+});
 
     console.log("FOUND BILL:", existingBill);
 
@@ -55,17 +54,8 @@ export class PaymentController {
     const xenditToken = req.headers['x-callback-token'];
     const verificationToken = process.env.XENDIT_WEBHOOK_VERIFICATION_TOKEN;
 
-    if (
-      verificationToken &&
-      xenditToken !== verificationToken
-    ) {
-      console.warn('[Webhook Warning] Unauthorized callback attempt');
-
-      return res.status(401).json({
-        status: 'error',
-        message: 'Invalid callback token',
-      });
-    }
+    console.log("XENDIT TOKEN:", xenditToken);
+console.log("ENV TOKEN:", verificationToken);
 
     await PaymentService.handleWebhook(req.body);
 

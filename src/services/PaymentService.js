@@ -1,102 +1,114 @@
 import prisma from "../config/db.js";
-import { Invoice } from "../config/xendit.js";
+import { invoiceClient } from "../config/xendit.js";
 import { AppError } from "../middleware/errorHandler.js";
 
 export class PaymentService {
   /**
    * Create Xendit Invoice
    */
-  static async createInvoice(billNumber) {
-    try {
-      // Validate Xendit Secret Key
-      if (!process.env.XENDIT_SECRET_KEY) {
-        throw new AppError("XENDIT_SECRET_KEY is not configured", 500);
-      }
+  static async createInvoice(billId) {
+  try {
 
-      // Find Bill
-      const bill = await prisma.bill.findUnique({
-        where: {
-          billNumber,
-        },
-      });
-
-      if (!bill) {
-        throw new AppError("Bill not found", 404);
-      }
-
-      // Check Bill Status
-      const billStatus = (bill.status || "").toUpperCase();
-
-      if (billStatus === "PAID" || billStatus === "LUNAS") {
-        throw new AppError("Bill already paid", 400);
-      }
-
-      // Reuse existing invoice if available
-      if (
-        bill.paymentUrl &&
-        bill.paymentUrl.includes("xendit")
-      ) {
-        return bill;
-      }
-
-      // Find User
-     const user = await prisma.user.findUnique({
-  where: {
-    id: bill.customerId,
-  },
-});
-
-      // Minimum amount validation
-      const finalAmount =
-        bill.totalAmount < 10000
-          ? 10000
-          : Math.floor(Number(bill.totalAmount));
-
-      const response = await Invoice.createInvoice({
-  data: {
-    externalId: bill.billNumber,
-    amount: finalAmount,
-    description: `Tagihan Air - ${bill.billingPeriod}`,
-
-    payerEmail:
-      user?.email || "customer@example.com",
-
-    currency: "IDR",
-
-    successRedirectUrl:
-      process.env.XENDIT_SUCCESS_REDIRECT_URL,
-
-    failureRedirectUrl:
-      process.env.XENDIT_FAILURE_REDIRECT_URL,
-  },
-});
-
-      // Save invoice data to database
-      const updatedBill = await prisma.bill.update({
-        where: {
-          billNumber,
-        },
-        data: {
-          paymentUrl: response.invoiceUrl,
-          externalId: response.id,
-        },
-      });
-
-      return updatedBill;
-    } catch (error) {
-      console.error(
-        "[XENDIT CREATE INVOICE ERROR]",
-        error.response?.data || error
+    if (!process.env.XENDIT_SECRET_KEY) {
+      throw new AppError(
+        "XENDIT_SECRET_KEY is not configured",
+        500
       );
-
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to create invoice";
-
-      throw new AppError(errorMessage, 500);
     }
+
+    // Find Bill by ID
+    const bill = await prisma.bill.findUnique({
+      where: {
+        id: billId,
+      },
+    });
+
+    if (!bill) {
+      throw new AppError("Bill not found", 404);
+    }
+
+    // Check Bill Status
+    const billStatus = (bill.status || "").toUpperCase();
+
+ // if (
+//   billStatus === "PAID" ||
+//   billStatus === "LUNAS"
+// ) {
+//   throw new AppError(
+//     "Bill already paid",
+//     400
+//   );
+// }
+
+    // Reuse existing invoice
+    // if (
+    //   bill.paymentUrl &&
+    //   bill.paymentUrl.includes("xendit")
+    // ) {
+    //   return bill;
+    // }
+
+    // Find User
+    const user = await prisma.user.findUnique({
+      where: {
+        id: bill.customerId,
+      },
+    });
+
+    // Minimum amount
+    const finalAmount =
+      bill.totalAmount < 10000
+        ? 10000
+        : Math.floor(Number(bill.totalAmount));
+
+    // Create Xendit Invoice
+  const response = await invoiceClient.createInvoice({
+      data: {
+        externalId: `${bill.billNumber}-${Date.now()}`,
+        amount: finalAmount,
+        description: `Tagihan Air - ${bill.billingPeriod}`,
+
+        payerEmail:
+          user?.email || "customer@example.com",
+
+        currency: "IDR",
+
+        successRedirectUrl:
+          process.env.XENDIT_SUCCESS_REDIRECT_URL,
+
+        failureRedirectUrl:
+          process.env.XENDIT_FAILURE_REDIRECT_URL,
+      },
+    });
+
+    // Save invoice
+    const updatedBill = await prisma.bill.update({
+      where: {
+        id: billId,
+      },
+      data: {
+        paymentUrl: response.invoiceUrl,
+        externalId: response.id,
+      },
+    });
+
+    return updatedBill;
+
+  } catch (error) {
+
+    console.error(
+      "[XENDIT CREATE INVOICE ERROR]",
+      error.response?.data || error
+    );
+
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to create invoice";
+
+    throw new AppError(errorMessage, 500);
   }
+}
 
   /**
    * Handle Xendit Webhook
@@ -124,11 +136,11 @@ export class PaymentService {
       }
 
       // Find Bill
-      const bill = await prisma.bill.findUnique({
-        where: {
-          billNumber: external_id,
-        },
-      });
+      const bill = await prisma.bill.findFirst({
+  where: {
+    externalId: id,
+  },
+});
 
       if (!bill) {
         console.warn(

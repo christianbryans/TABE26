@@ -100,6 +100,22 @@ export class UserService {
   isActive
 } = data;
 
+const existingUser = await prisma.user.findFirst({
+  where: {
+    OR: [
+      { email },
+      { customer_number: data.customer_number }
+    ]
+  }
+});
+
+if (existingUser) {
+  throw new AppError(
+    'Email or Customer Number already exists',
+    409
+  );
+}
+
       const hashedPassword = await bcrypt.hash(password, 10);
       const customerNumber = `CUST-${Date.now()}`;
 

@@ -1,5 +1,5 @@
-INSERT INTO bills (
-  id,
+INSERT INTO "bills" (
+  "id",
   "customerId",
   "billNumber",
   "billingPeriod",
