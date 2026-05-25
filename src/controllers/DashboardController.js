@@ -7,6 +7,188 @@ import { DashboardService } from '../services/DashboardService.js';
  */
 export class DashboardController {
 
+
+  /**
+   * GET /api/dashboard/chart
+   */
+  static async getWaterUsageChart(req, res) {
+  try {
+
+    const { range } = req.query;
+
+    // sementara fokus Harian dulu
+    if (range === "Harian") {
+
+    // awal hari ini
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    // akhir hari ini
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const usages = await prisma.waterUsage.findMany({
+      where: {
+        timestamp: {
+          gte: startOfDay,
+          lte: endOfDay
+        }
+      },
+      orderBy: {
+        timestamp: "asc"
+      }
+    });
+
+    // bucket chart
+    const chart = [
+      { x: "00", value: 0 },
+      { x: "03", value: 0 },
+      { x: "06", value: 0 },
+      { x: "09", value: 0 },
+      { x: "12", value: 0 },
+      { x: "15", value: 0 },
+      { x: "18", value: 0 },
+      { x: "21", value: 0 }
+    ];
+
+    for (const item of usages) {
+
+      const hour =
+        new Date(item.timestamp).getHours();
+
+      const bucket =
+        Math.floor(hour / 3) * 3;
+
+      const index =
+        bucket / 3;
+
+      chart[index].value +=
+        item.volume || 0;
+    }
+
+    return res.json(chart);
+  }
+  if (range === "Mingguan") {
+
+      const chart = [
+        { x: "Sen", value: 0 },
+        { x: "Sel", value: 0 },
+        { x: "Rab", value: 0 },
+        { x: "Kam", value: 0 },
+        { x: "Jum", value: 0 },
+        { x: "Sab", value: 0 },
+        { x: "Min", value: 0 }
+      ];
+
+      const sevenDaysAgo = new Date();
+
+      sevenDaysAgo.setDate(
+        sevenDaysAgo.getDate() - 6
+      );
+
+      sevenDaysAgo.setHours(
+        0, 0, 0, 0
+      );
+
+      const usages =
+        await prisma.waterUsage.findMany({
+          where: {
+            timestamp: {
+              gte: sevenDaysAgo
+            }
+          }
+        });
+
+      const dayMap = {
+        1: 0, // Sen
+        2: 1, // Sel
+        3: 2, // Rab
+        4: 3, // Kam
+        5: 4, // Jum
+        6: 5, // Sab
+        0: 6  // Min
+      };
+
+      for (const item of usages) {
+
+        const day =
+          new Date(item.timestamp)
+            .getDay();
+
+        const index =
+          dayMap[day];
+
+        chart[index].value +=
+          item.volume || 0;
+
+      }
+
+      return res.json(chart);
+
+    }
+if (range === "Bulanan") {
+
+  const currentYear =
+    new Date().getFullYear();
+console.log("currentYear =", currentYear);
+  const chart = [
+    { x: "Jan", value: 0 },
+    { x: "Feb", value: 0 },
+    { x: "Mar", value: 0 },
+    { x: "Apr", value: 0 },
+    { x: "May", value: 0 }
+  ];
+
+  const startDate =
+    new Date(currentYear, 0, 1);
+
+  const endDate =
+    new Date(currentYear, 4, 31, 23, 59, 59);
+
+  const usages =
+    await prisma.waterUsage.findMany({
+      where: {
+        timestamp: {
+          gte: startDate,
+          lte: endDate
+        }
+      }
+    });
+
+  for (const item of usages) {
+
+    const month =
+      new Date(item.timestamp)
+        .getMonth();
+
+    // hanya Jan-Apr
+    if (month >= 0 && month <= 4) {
+
+      chart[month].value +=
+        item.volume || 0;
+
+    }
+
+  }
+
+  return res.json(chart);
+
+}
+    return res.status(400).json({
+      message: "Range tidak valid"
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Failed to load chart data"
+    });
+
+  }
+}
+
   /**
    * GET /api/v1/dashboard
    * Dashboard customer

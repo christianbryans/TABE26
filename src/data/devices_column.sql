@@ -48,7 +48,7 @@ ALTER TABLE public.devices OWNER TO postgres;
 -- Data for Name: devices; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.devices (uid, "deviceId", dev_name, location, "createdAt", name) FROM stdin;
+COPY public.devices (id, user_id, name, location, "createdAt", status) FROM stdin;
 4898-9916-26	P0001	Sensor Lantai 5 Unit 5D	Lt.5 Unit 5D, Braga City Walk, Bandung	2024-07-13 06:38:11	\N
 6928-8720-45	P0002	Sensor Lantai 8 Unit 8A	Lt.8 Unit 8A, Braga City Walk, Bandung	2024-07-13 06:38:11	\N
 6607-1446-65	P0003	Sensor Lantai 14 Unit 14C	Lt.14 Unit 14C, Braga City Walk, Bandung	2024-07-13 06:38:11	\N
@@ -79,8 +79,6 @@ COPY public.devices (uid, "deviceId", dev_name, location, "createdAt", name) FRO
 7412-4498-99	P0028	Sensor Lantai 5 Unit 5C	Lt.5 Unit 5C, Braga City Walk, Bandung	2024-07-13 06:38:11	\N
 9708-1717-20	P0029	Sensor Lantai 7 Unit 7D	Lt.7 Unit 7D, Braga City Walk, Bandung	2024-07-13 06:38:11	\N
 5133-3313-18	P0030	Sensor Lantai 11 Unit 11C	Lt.11 Unit 11C, Braga City Walk, Bandung	2024-07-13 06:38:11	\N
-P-9999-TEST	P0099	\N	\N	2026-05-19 05:45:13.59	Alat Baru Percobaan
-UID-FINAL-01	3374af0e-6	\N	\N	2026-05-19 05:52:47.437	Sensor Validasi Akhir
 \.
 
 

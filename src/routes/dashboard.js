@@ -16,8 +16,7 @@ router.get(
 
 router.get(
   '/chart',
-  authMiddleware,
-  DashboardController.getChartData
+  DashboardController.getWaterUsageChart
 );
 
 router.get(
