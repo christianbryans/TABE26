@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import { sendActivationEmail } from '../services/MailService.js';
 import { UserService } from '../services/UserService.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 
@@ -63,14 +62,7 @@ export class UserController {
       isActive: false,
     });
 
-    // ── Kirim email aktivasi ──────────────────────────────
-    // sendActivationEmail(email, name, unit, token)
-    await sendActivationEmail(
-      email,
-      name,
-      unit,            // ← unit dikirim ke email template
-      activationToken
-    );
+
 
     res.success(user, 'User created and activation email sent', 201);
   });

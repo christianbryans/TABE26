@@ -24,6 +24,10 @@ model User {
 
   role            String   @default("customer")
 
+  // RESET PASSWORD
+  resetToken       String?
+  resetTokenExpiry DateTime?
+
   // RELATION
   devices         Device[]
   bills           Bill[]
