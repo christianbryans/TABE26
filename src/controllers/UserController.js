@@ -63,7 +63,6 @@ export class UserController {
     });
 
 
-
     res.success(user, 'User created and activation email sent', 201);
   });
 

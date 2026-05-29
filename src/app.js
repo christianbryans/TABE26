@@ -16,6 +16,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import billingRoutes from './routes/billing.js';
 import paymentRoutes from './routes/payment.js';
 import userRoutes from './routes/users.js';
+import adminRoutes from "./routes/admin.js";
 
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(cors({
   origin: 'http://localhost:5173', 
   credentials: true,
 }))
+app.use(cors());
 app.use(morgan('dev'));
 
 app.use(express.json());
@@ -56,6 +58,7 @@ app.use('/api/v1/devices', deviceRoutes);
 app.use('/api/v1/iot', iotRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/billing', billingRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 
 app.use(errorHandler);

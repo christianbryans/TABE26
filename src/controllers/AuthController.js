@@ -109,6 +109,8 @@ export class AuthController {
 );
 
       if (!isMatch) {
+        const tess = await bcrypt.hash("andi123", 10);
+        console.log(tess);
         return res.status(400).json({
           success: false,
           message: "Password salah",

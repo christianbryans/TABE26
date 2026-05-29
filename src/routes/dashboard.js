@@ -16,6 +16,7 @@ router.get(
 
 router.get(
   '/chart',
+  authMiddleware,
   DashboardController.getWaterUsageChart
 );
 
@@ -47,6 +48,12 @@ router.get(
   '/admin/payment-status',
   authMiddleware,
  DashboardController.getPaymentStatus
+);
+
+router.get(
+  "/monthly-volume",
+  authMiddleware,
+  DashboardController.getMonthlyVolume
 );
 
 export default router;

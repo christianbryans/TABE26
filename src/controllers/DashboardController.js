@@ -13,7 +13,7 @@ export class DashboardController {
    */
   static async getWaterUsageChart(req, res) {
   try {
-
+const userId = req.user.id;
     const { range } = req.query;
 
     // sementara fokus Harian dulu
@@ -27,17 +27,22 @@ export class DashboardController {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
+    console.log("USER LOGIN =", userId);
+
     const usages = await prisma.waterUsage.findMany({
-      where: {
-        timestamp: {
-          gte: startOfDay,
-          lte: endOfDay
-        }
-      },
-      orderBy: {
-        timestamp: "asc"
-      }
-    });
+  where: {
+    userId,
+    timestamp: {
+      gte: startOfDay,
+      lte: endOfDay
+    }
+  }
+});
+
+console.log(
+  "TOTAL DATA USER =",
+  usages.length
+);
 
     // bucket chart
     const chart = [
@@ -63,7 +68,7 @@ export class DashboardController {
         bucket / 3;
 
       chart[index].value +=
-        item.volume || 0;
+        (item.volume)/1000 || 0;
     }
 
     return res.json(chart);
@@ -91,13 +96,14 @@ export class DashboardController {
       );
 
       const usages =
-        await prisma.waterUsage.findMany({
-          where: {
-            timestamp: {
-              gte: sevenDaysAgo
-            }
-          }
-        });
+  await prisma.waterUsage.findMany({
+    where: {
+      userId,
+      timestamp: {
+        gte: sevenDaysAgo
+      }
+    }
+  });
 
       const dayMap = {
         1: 0, // Sen
@@ -119,10 +125,14 @@ export class DashboardController {
           dayMap[day];
 
         chart[index].value +=
-          item.volume || 0;
+          (item.volume)/1000 || 0;
 
       }
-
+console.log(
+  "RANGE:",
+  range,
+  JSON.stringify(chart, null, 2)
+);
       return res.json(chart);
 
     }
@@ -146,14 +156,15 @@ console.log("currentYear =", currentYear);
     new Date(currentYear, 4, 31, 23, 59, 59);
 
   const usages =
-    await prisma.waterUsage.findMany({
-      where: {
-        timestamp: {
-          gte: startDate,
-          lte: endDate
-        }
+  await prisma.waterUsage.findMany({
+    where: {
+      userId,
+      timestamp: {
+        gte: startDate,
+        lte: endDate
       }
-    });
+    }
+  });
 
   for (const item of usages) {
 
@@ -165,12 +176,16 @@ console.log("currentYear =", currentYear);
     if (month >= 0 && month <= 4) {
 
       chart[month].value +=
-        item.volume || 0;
+        (item.volume)/1000 || 0;
 
     }
 
   }
-
+console.log(
+  "RANGE:",
+  range,
+  JSON.stringify(chart, null, 2)
+);
   return res.json(chart);
 
 }
@@ -399,4 +414,118 @@ console.log("currentYear =", currentYear);
       200
     );
   });
+
+  static async getMonthlyVolume(req, res) {
+
+  try {
+const userId = req.user.id;
+    const now = new Date();
+
+    // BULAN INI
+    const startOfCurrentMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+      );
+
+    const endOfCurrentMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59
+      );
+
+    // BULAN LALU
+    const startOfLastMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        1
+      );
+
+    const endOfLastMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        0,
+        23,
+        59,
+        59
+      );
+
+    // QUERY BULAN INI
+    const currentMonthUsages =
+  await prisma.waterUsage.findMany({
+    where: {
+      userId,
+      timestamp: {
+        gte: startOfCurrentMonth,
+        lte: endOfCurrentMonth
+      }
+    }
+  });
+
+    // QUERY BULAN LALU
+    const lastMonthUsages =
+  await prisma.waterUsage.findMany({
+    where: {
+      userId,
+      timestamp: {
+        gte: startOfLastMonth,
+        lte: endOfLastMonth
+      }
+    }
+  });
+
+    let currentVolume = 0;
+    let lastVolume = 0;
+
+    for (const item of currentMonthUsages) {
+      currentVolume += item.volume || 0;
+    }
+
+    for (const item of lastMonthUsages) {
+      lastVolume += item.volume || 0;
+    }
+
+    const difference =
+      currentVolume - lastVolume;
+
+const latestUnitPrice =
+  await prisma.unitPrice.findFirst({
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+
+const unitPrice =
+  latestUnitPrice?.price || 0;
+
+const estimatedBill =
+  currentVolume * unitPrice / 1000;
+
+    return res.json({
+  currentVolume,
+  lastVolume,
+  difference,
+  unitPrice,
+  estimatedBill
+});
+
+  } catch (error) {
+
+    console.error(error);
+
+    return res.status(500).json({
+      message:
+        "Failed to load monthly volume"
+    });
+
+  }
+
+}
 }
