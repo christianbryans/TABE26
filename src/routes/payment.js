@@ -51,9 +51,9 @@ router.get("/seed", async (req, res) => {
 
   const bill = await prisma.bill.create({
     data: {
-      customerId: "780ada8f-3c74-45ef-9784-4953e2db5085",
+      userId: "780ada8f-3c74-45ef-9784-4953e2db5085",
 
-      billNumber: `BILL-${nextNumber}`,
+      billNumber: `INV-${nextNumber}`,
 
       billingPeriod: "May 2026",
 
@@ -103,6 +103,10 @@ router.get(
   PaymentController.getPaymentStatus
 );
 
-
+router.get(
+  "/invoice/:billId",
+  authMiddleware,
+  PaymentController.downloadInvoice
+);
 
 export default router;

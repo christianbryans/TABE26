@@ -1,6 +1,7 @@
 import prisma from '../config/db.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 import { PaymentService } from '../services/PaymentService.js';
+import { generateInvoicePdf } from "../utils/invoice.js";
 
 export class PaymentController {
 
@@ -102,4 +103,29 @@ console.log("ENV TOKEN:", verificationToken);
       },
     });
   });
+
+  static async downloadInvoice(
+  req,
+  res
+) {
+
+  const pdfBuffer =
+    await PaymentService
+      .downloadInvoice(
+        req.params.billId
+      );
+
+  res.setHeader(
+    "Content-Type",
+    "application/pdf"
+  );
+
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=invoice-${req.params.billId}.pdf`
+  );
+
+  res.send(pdfBuffer);
+
+}
 }

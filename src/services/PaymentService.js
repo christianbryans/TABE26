@@ -1,6 +1,7 @@
 import prisma from "../config/db.js";
 import { invoiceClient } from "../config/xendit.js";
 import { AppError } from "../middleware/errorHandler.js";
+import { generateInvoicePdf } from "../utils/invoice.js";
 
 export class PaymentService {
   /**
@@ -51,7 +52,7 @@ export class PaymentService {
     // Find User
     const user = await prisma.user.findUnique({
       where: {
-        id: bill.customerId,
+        id: bill.userId,
       },
     });
 
@@ -209,4 +210,36 @@ console.error(error);
       );
     }
   }
+
+  static async downloadInvoice(
+  billId
+) {
+
+  const bill =
+    await prisma.bill.findUnique({
+      where: {
+        id: billId
+      }
+    });
+
+  if (!bill) {
+    throw new AppError(
+      "Bill not found",
+      404
+    );
+  }
+
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        id: bill.userId
+      }
+    });
+
+  return await generateInvoicePdf(
+    bill,
+    user
+  );
+
+}
 }

@@ -2,6 +2,7 @@ import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { DashboardController } from '../controllers/DashboardController.js';
 
+
 const router = express.Router();
 
 /**
@@ -54,6 +55,12 @@ router.get(
   "/monthly-volume",
   authMiddleware,
   DashboardController.getMonthlyVolume
+);
+
+router.get(
+  "/current-bill",
+  authMiddleware,
+  DashboardController.getCurrentBill
 );
 
 export default router;

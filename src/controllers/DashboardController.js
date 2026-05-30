@@ -1,6 +1,7 @@
 import prisma from '../config/db.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
 import { DashboardService } from '../services/DashboardService.js';
+import { BillingService } from '../services/BillingService.js';
 
 /**
  * DashboardController
@@ -523,6 +524,39 @@ const estimatedBill =
     return res.status(500).json({
       message:
         "Failed to load monthly volume"
+    });
+
+  }
+
+}
+
+static async getCurrentBill(req, res) {
+
+  console.log(
+    "MASUK GET CURRENT BILL"
+  );
+
+  try {
+
+    const userId =
+      req.user.id;
+
+    const bill =
+      await BillingService
+        .syncUserBills(userId);
+
+    return res.json({
+      status: "success",
+      data: bill
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    return res.status(500).json({
+      message:
+        "Failed to load bill"
     });
 
   }
