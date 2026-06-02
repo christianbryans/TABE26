@@ -35,6 +35,11 @@ router.get(
   AdminController.getBillingTable
 );
 
+router.get(
+  "/unit-price",
+  AdminController.getCurrentUnitPrice
+);
+
 router.post(
   "/unit-price",
   AdminController.updateUnitPrice

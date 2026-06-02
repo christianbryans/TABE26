@@ -31,15 +31,10 @@ export class PaymentService {
     // Check Bill Status
     const billStatus = (bill.status || "").toUpperCase();
 
- // if (
-//   billStatus === "PAID" ||
-//   billStatus === "LUNAS"
-// ) {
-//   throw new AppError(
-//     "Bill already paid",
-//     400
-//   );
-// }
+    // Prevent creation of invoice for already paid bills
+    if (billStatus === "PAID" || billStatus === "LUNAS") {
+      throw new AppError("Bill already paid", 400);
+    }
 
     // Reuse existing invoice
     // if (
@@ -128,6 +123,14 @@ export class PaymentService {
       payment_channel,
     } = callbackData;
 
+    // Support multiple ways Xendit (or other processors) may send IDs:
+    // - `id` is the invoice id returned by Xendit when creating invoice
+    // - `external_id` may contain our billNumber or the same external id
+    // Try to find the bill by several candidates to be resilient to differences
+    const candidates = [];
+    if (id) candidates.push(id);
+    if (external_id) candidates.push(external_id);
+
       // Only process successful payment
       if (
         status !== "PAID" &&
@@ -136,12 +139,19 @@ export class PaymentService {
         return;
       }
 
-      // Find Bill
-      const bill = await prisma.bill.findFirst({
-  where: {
-    externalId: id,
-  },
-});
+      // Find Bill by robust matching: externalId == id OR externalId == external_id OR billNumber == external_id
+      let bill = null;
+
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        bill = await prisma.bill.findFirst({ where: { externalId: candidate } });
+        if (bill) break;
+      }
+
+      // fallback: maybe `external_id` contains our billNumber
+      if (!bill && external_id) {
+        bill = await prisma.bill.findFirst({ where: { billNumber: external_id } });
+      }
 
       if (!bill) {
         console.warn(

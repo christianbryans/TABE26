@@ -765,4 +765,34 @@ static async updateUnitPrice(req, res) {
   }
 
 }
+
+static async getCurrentUnitPrice(req, res) {
+
+  try {
+
+    const latestPrice =
+      await prisma.unitPrice.findFirst({
+
+        orderBy: {
+          createdAt: "desc"
+        }
+
+      });
+
+    return res.json({
+      message: "Current unit price fetched successfully",
+      data: latestPrice
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Failed to load current unit price"
+    });
+
+  }
+
+}
 }
