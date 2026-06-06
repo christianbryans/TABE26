@@ -38,12 +38,15 @@ const baseAllowedOrigins = [
 ];
 
 const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+  ? process.env.CORS_ORIGIN
+      .split(',')
+      .map((origin) => origin.trim().toLowerCase())
   : baseAllowedOrigins;
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin?.toLowerCase();
+    if (!origin || allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS policy does not allow access from ${origin}`));
