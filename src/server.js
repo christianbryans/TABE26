@@ -9,11 +9,18 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 
 const startServer = async () => {
   try {
-    // Test database connection
-    await prisma.$queryRaw`SELECT 1`;
-    console.log('✓ Database connection successful');
+    if (!process.env.DATABASE_URL) {
+      console.warn('⚠️ DATABASE_URL is not set. Backend will start, but database queries will fail.');
+    } else {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+        console.log('✓ Database connection successful');
+      } catch (error) {
+        console.error('✗ Database connection failed:', error.message);
+      }
+    }
 
-    // Start Express server
+    // Start Express server even if database connection fails
     const server = app.listen(PORT, () => {
       console.log(`
 ╔════════════════════════════════════════╗
