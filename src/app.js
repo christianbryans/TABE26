@@ -69,7 +69,7 @@ app.use(responseHandler);
 
 app.use('/api/users', userRoutes);
 
-app.get('/health', (req, res) => {
+app.get(['/health', '/api/v1/health'], (req, res) => {
   res.json({ status: 'OK' });
 });
 
