@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node dist/server.js",
-    "build": "echo 'Build script here'",
+    "start": "node src/server.js",
+    "build": "echo 'Build not required for backend source deployment'",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "prisma:generate": "prisma generate",

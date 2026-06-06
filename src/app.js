@@ -31,12 +31,13 @@ app.use(limiter);
 */
 
 app.use(helmet());
-app.use(cors({
-  origin: 'http://localhost:5173', 
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
   credentials: true,
-}))
-app.use(cors());
+};
+app.use(cors(corsOptions));
 app.use(morgan('dev'));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

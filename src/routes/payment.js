@@ -49,8 +49,11 @@ router.get("/seed", async (req, res) => {
     ? parseInt(latestBill.billNumber.split("-")[1] || "1") + 1
     : 1;
 
-  // compute billingDate as start of current month, and dueDate as 20th of next month
+  // compute billingDate as start of current month for invoice issuance,
+  // but bill the previous month usage period
   const now = new Date();
+  const usageMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const usageMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
   const billingDate = new Date(now.getFullYear(), now.getMonth(), 1);
   const dueDate = new Date(billingDate.getFullYear(), billingDate.getMonth() + 1, 20);
 
@@ -58,8 +61,8 @@ router.get("/seed", async (req, res) => {
   const userIdForSeed = "P0001"; // Andi Hidayat seeded user
   const userRecord = await prisma.user.findUnique({ where: { id: userIdForSeed } });
 
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const monthStart = usageMonthStart;
+  const monthEnd = usageMonthEnd;
   const usageRows = await prisma.waterUsage.findMany({
     where: {
       userId: userIdForSeed,
@@ -82,7 +85,7 @@ router.get("/seed", async (req, res) => {
 
       billNumber: `INV-${nextNumber}`,
 
-      billingPeriod: billingDate.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+      billingPeriod: usageMonthStart.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
 
       billingDate,
 

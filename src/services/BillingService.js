@@ -10,20 +10,33 @@ export class BillingService {
 
     if (!device) throw new AppError('Device not found', 404);
 
-    const lastUsage = await prisma.waterUsage.findFirst({
-      where: { deviceId },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!lastUsage) throw new AppError('No water usage data found for this device', 404);
-
     const now = new Date();
+    const usageMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const usageMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
     const billingDate = new Date(now.getFullYear(), now.getMonth(), 1);
     const billNumber = `INV-${Date.now()}`;
-    const billingPeriod = billingDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    const billingPeriod = usageMonthStart.toLocaleString('en-US', { month: 'long', year: 'numeric' });
     const dueDate = new Date(billingDate.getFullYear(), billingDate.getMonth() + 1, 20);
 
-    const totalAmount = Math.round(lastUsage.cumulative * unitPrice);
+    const usages = await prisma.waterUsage.findMany({
+      where: {
+        deviceId,
+        timestamp: { gte: usageMonthStart, lte: usageMonthEnd },
+      },
+    });
+
+    let totalLiter = 0;
+    for (const item of usages) totalLiter += item.volume || 0;
+
+    if (totalLiter === 0) {
+      throw new AppError('No water usage data found for the previous month', 404);
+    }
+
+    const totalM3 = totalLiter / 1000;
+    const waterCost = totalM3 * unitPrice;
+    const tax = waterCost * 0.10;
+    const adminFee = 2500;
+    const totalAmount = Math.round(waterCost + tax + adminFee);
 
     return await prisma.bill.create({
       data: {
@@ -33,7 +46,7 @@ export class BillingService {
         billingPeriod,
         billingDate,
         dueDate,
-        waterUsage: lastUsage.cumulative,
+        waterUsage: totalM3,
         unitPrice,
         totalAmount,
         status: 'pending',
@@ -136,11 +149,18 @@ export class BillingService {
       const month = startMonth.getMonth();
       const monthStart = new Date(year, month, 1);
       const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+      const invoiceDate = new Date(year, month + 1, 1);
+      const dueDate = new Date(year, month + 2, 20);
+
+      const billPeriodLabel = monthStart.toLocaleString('en-US', {
+        month: 'long',
+        year: 'numeric',
+      });
 
       const existingBill = await prisma.bill.findFirst({
         where: {
           userId,
-          billingDate: { gte: monthStart, lte: monthEnd },
+          billingPeriod: billPeriodLabel,
         },
       });
 
@@ -163,15 +183,14 @@ export class BillingService {
           const tax = waterCost * 0.10;
           const adminFee = 2500;
           const totalAmount = waterCost + tax + adminFee;
-          const dueDate = new Date(year, month + 1, 20);
 
           await prisma.bill.create({
             data: {
               userId,
               customer_number: user.customer_number,
               billNumber: `INV-${Date.now()}-${month}`,
-              billingPeriod: monthStart.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
-              billingDate: monthStart,
+              billingPeriod: billPeriodLabel,
+              billingDate: invoiceDate,
               dueDate,
               waterUsage: totalM3,
               unitPrice,
