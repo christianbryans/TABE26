@@ -31,14 +31,15 @@ app.use(limiter);
 */
 
 app.use(helmet());
+const baseAllowedOrigins = [
+  'http://localhost:5173',
+  'https://smartwatermeter.l-prepaid.com',
+  'https://www.smartwatermeter.l-prepaid.com',
+];
+
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
-  : process.env.NODE_ENV === 'production'
-  ? [
-      'https://smartwatermeter.l-prepaid.com',
-      'https://www.smartwatermeter.l-prepaid.com',
-    ]
-  : ['http://localhost:5173'];
+  : baseAllowedOrigins;
 
 const corsOptions = {
   origin: function (origin, callback) {
