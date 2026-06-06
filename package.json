@@ -2,7 +2,7 @@
   "name": "water-monitoring-backend",
   "version": "1.0.0",
   "description": "Water Quality Monitoring System Backend API",
-  "main": "dist/server.js",
+  "main": "src/server.js",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
