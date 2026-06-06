@@ -31,8 +31,23 @@ app.use(limiter);
 */
 
 app.use(helmet());
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
+  : process.env.NODE_ENV === 'production'
+  ? [
+      'https://smartwatermeter.l-prepaid.com',
+      'https://www.smartwatermeter.l-prepaid.com',
+    ]
+  : ['http://localhost:5173'];
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS policy does not allow access from ${origin}`));
+    }
+  },
   credentials: true,
 };
 app.use(cors(corsOptions));
